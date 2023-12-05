@@ -1,0 +1,11 @@
+{
+	"id": "LightRead-plugin",
+	"name": "轻阅",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "轻阅同步助手",
+	"author": "Bingo",
+	"authorUrl": "http//www.relaxone.cn",
+	"fundingUrl": "http//www.relaxone.cn",
+	"isDesktopOnly": true
+}
