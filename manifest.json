@@ -1,10 +1,10 @@
 {
-	"id": "LightRead-plugin",
-	"name": "轻阅",
+	"id": "lightread-sync",
+	"name": "轻阅同步助手",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "轻阅同步助手",
-	"author": "Bingo",
+	"description": "轻阅同步助手,用来同步轻阅app的文章",
+	"author": "flyer1b",
 	"authorUrl": "http//www.relaxone.cn",
 	"fundingUrl": "http//www.relaxone.cn",
 	"isDesktopOnly": true

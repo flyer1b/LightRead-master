@@ -266,7 +266,7 @@ async function writeAllArticles(vault: Vault,plugin: MyPlugin){
 		isWriting = true;
 	var time = plugin.settings.time;
 	var page = 1;
-	new Notice(`time: ${time}`);
+	// new Notice(`time: ${time}`);
 	do{
 		
 		const articles = await fetchArticle(plugin.settings,time,page);
@@ -278,7 +278,7 @@ async function writeAllArticles(vault: Vault,plugin: MyPlugin){
 		try{
 			await Promise.all(articles.map((article: { title: string; content: string; }) => writeArticle(vault, article)));
 		}catch(error){
-			new Notice('同步失败: ' + error.message);
+			new Notice(error.message);
 			isWriting = false;
 			return;
 		}
