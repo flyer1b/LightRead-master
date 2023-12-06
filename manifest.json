@@ -1,9 +1,9 @@
 {
 	"id": "lightread-sync",
-	"name": "轻阅同步助手",
+	"name": "lightread-sync-assistant",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "轻阅同步助手,用来同步轻阅app的文章",
+	"description": "a plugin for lightread to sync articles to obsidian",
 	"author": "flyer1b",
 	"authorUrl": "http//www.relaxone.cn",
 	"fundingUrl": "http//www.relaxone.cn",

@@ -1,7 +1,7 @@
-# qingyue Plugin
+# lightread-sync-assistant
 
-这是一个用来同步轻阅app的文章到obsidian的插件.
+This is a plugin used to synchronize articles from LightReading app to obsidian.
 
-# 使用方法
+# how to use
 
-在轻阅插件设置页登录在轻阅注册的用户名密码,点击obsidian动作栏的轻阅同步按钮就可以了。
+Login to the user name and password registered in LightReading app on the lightread-sync-assistant plugin settings page, and click the lightread-sync-assistant synchronization button in the obsidian action bar,so that the articles can be synchronized with obsidian.
