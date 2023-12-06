@@ -5,7 +5,7 @@
 	"minAppVersion": "0.15.0",
 	"description": "a plugin for lightread to sync articles to obsidian",
 	"author": "flyer1b",
-	"authorUrl": "http//www.relaxone.cn",
+	"authorUrl": "https://github.com/flyer1b",
 	"fundingUrl": "http//www.relaxone.cn",
 	"isDesktopOnly": true
 }
