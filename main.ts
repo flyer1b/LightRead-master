@@ -1,16 +1,16 @@
 import { time } from 'console';
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting,Vault,TFile } from 'obsidian';
+import { App, Notice, Plugin, PluginSettingTab, Setting,Vault,TFile, normalizePath, requestUrl } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
+interface SyncReadPluginSettings {
 	email: string;
 	password: string;
 	token: string;
 	time: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: SyncReadPluginSettings = {
 	email: '',
 	password: '',
 	token: '',
@@ -19,14 +19,14 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 var isWriting = false;
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class SyncReadPlugin extends Plugin {
+	settings: SyncReadPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('sync', '轻阅', (evt: MouseEvent) => {
+		const ribbonIconEl = this.addRibbonIcon('sync', 'SyncRead', (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			// new Notice('This is a notice!');
 			// new Notice(`path: ${this.app.vault.getRoot().path}`);
@@ -34,66 +34,15 @@ export default class MyPlugin extends Plugin {
 			// new Notice(`token: ${this.settings.token}`);
 		 	writeAllArticles(this.app.vault,this);
 		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
-		});
+		
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		// if(this.settings.token !== ''){
 		// 	this.addSettingTab(new SettingsTab(this.app, this));
 		// }else{
 		// }
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new SyncReadSettingTab(this.app, this));
 
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
 	onunload() {
@@ -109,26 +58,11 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
+class SyncReadSettingTab extends PluginSettingTab {
+	plugin: SyncReadPlugin;
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: SyncReadPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 		
@@ -141,7 +75,7 @@ class SampleSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('用户名')
-			.setDesc('输入你在轻阅注册的邮箱')
+			.setDesc('输入你在SyncRead注册的邮箱')
 			.addText(text => text
 				.setPlaceholder('请输入邮箱')
 				.setValue(this.plugin.settings.email)
@@ -168,82 +102,62 @@ class SampleSettingTab extends PluginSettingTab {
 						button.setButtonText('登录中...');
 						const {email, password} = this.plugin.settings;
 						// new Notice(`email: ${email}`);
-						const res = await fetch('http://129.226.195.147:5050/login/', {
+						try{
+						const res = await requestUrl({
+							url:'http://43.138.149.38:5050/login/',
 							method: 'POST',
-							headers: {	
-								'Content-Type': 'application/json'
-							},
+							contentType: 'application/json',
 							body: JSON.stringify({
 									'username':email,
 									'password':password
 							
 						})});
-						if (!res.ok) {
+						if (res.status !== 200) {
 							new Notice('登录失败');
 							button.disabled = false;
 							button.setButtonText('登录');
 							return;
 						}
-						const data = await res.json();
+						const data = await res.json;
 						// new Notice(`res: ${JSON.stringify(data)}`);
 						this.plugin.settings.token = data.data.token;
 						await this.plugin.saveSettings();
 						new Notice('登录成功');
 						button.setButtonText('登录成功');
 						button.disabled = false;
+					}catch(error){
+						new Notice('登录失败: ' + error.message);
+						button.disabled = false;
+						button.setButtonText('登录');
+						return;
+					}
 					});
 			})
 	}
 }
 
-class SettingsTab extends PluginSettingTab {
-	plugin: MyPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-		
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('用户名')
-			.setDesc(this.plugin.settings.email)
-			.addButton(button => {
-				button
-					.setButtonText('退出登录')
-					.onClick(async () => {
-						this.plugin.settings.token = '';
-						await this.plugin.saveSettings();
-					
-						new Notice('退出登录成功');
-					});
-			});
-			   
-	}
-}
-
-
-async function fetchArticle(settings: MyPluginSettings,time: string,page: number){
+async function fetchArticle(settings: SyncReadPluginSettings,time: string,page: number){
 
 	try {
-	const res = await fetch(`http://129.226.195.147:5050/get_synced_articles?time=${time}&page_number=${page}&page_size=50`, {
-		method: 'GET',
-		headers: {
-			'Authorization': 'Bearer ' + settings.token
+
+	
+	const res = await requestUrl(
+		{
+			url:`http://43.138.149.38:5050/get_synced_articles?time=${time}&page_number=${page}&page_size=50`, 
+			method: 'GET',
+			headers: {
+				'Authorization': 'Bearer ' + settings.token
+			},
 		}
-		});
+		);
 	// new Notice(`token: ${settings.token}`);
-	if (!res.ok) {
+	if (res.status !== 200) {
 		new Notice('同步失败');
 		isWriting = false;
 		return;
 	}
-	const data = await res.json();
+	const data = await res.json;
 	// new Notice(`res: ${data.data.length}`);
 	return data.data;
 } catch (error) {
@@ -254,12 +168,12 @@ async function fetchArticle(settings: MyPluginSettings,time: string,page: number
 }
 
 async function writeArticle(vault: Vault, article: { title: string, content: string }): Promise<TFile> {
-	var folder = vault.getAbstractFileByPath('轻阅同步文件夹');
-	if(!folder) folder = await vault.createFolder('轻阅同步文件夹');
-	return vault.create(folder.path+'/'+sanitizeFilename(article.title) + ".md", article.content);
+	var folder = vault.getAbstractFileByPath('SyncRead同步文件夹');
+	if(!folder) folder = await vault.createFolder('SyncRead同步文件夹');
+	return vault.create(folder.path+'/'+normalizePath(article.title) + ".md", article.content);
 }
 
-async function writeAllArticles(vault: Vault,plugin: MyPlugin){
+async function writeAllArticles(vault: Vault,plugin: SyncReadPlugin){
 
 	new Notice(isWriting ? '正在同步' : '开始同步');
 	if(isWriting) return;
@@ -290,7 +204,3 @@ async function writeAllArticles(vault: Vault,plugin: MyPlugin){
 	}while(true);
 
 }
-
-function sanitizeFilename(filename: string): string {
-	return filename.replace(/[\\/:\*\?"<>\|]/g, '_');
-  }
