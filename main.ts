@@ -170,7 +170,7 @@ async function fetchArticle(settings: SyncReadPluginSettings,time: string,page: 
 async function writeArticle(vault: Vault, article: { title: string, content: string }): Promise<TFile> {
 	var folder = vault.getAbstractFileByPath('SyncRead同步文件夹');
 	if(!folder) folder = await vault.createFolder('SyncRead同步文件夹');
-	return vault.create(folder.path+'/'+normalizePath(article.title) + ".md", article.content);
+	return vault.create(folder.path+'/'+filterIllegalChars(normalizePath(article.title)) + ".md", article.content);
 }
 
 async function writeAllArticles(vault: Vault,plugin: SyncReadPlugin){
@@ -203,4 +203,12 @@ async function writeAllArticles(vault: Vault,plugin: SyncReadPlugin){
 		// new Notice(`page: ${page}`);
 	}while(true);
 
+}
+
+function filterIllegalChars(title: string): string {
+    // 定义非法字符
+    const illegalChars = /[\\/:*?"<>|]/g;
+    // 使用正则表达式替换非法字符
+    const filteredTitle = title.replace(illegalChars, "");
+    return filteredTitle;
 }
