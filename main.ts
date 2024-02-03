@@ -8,6 +8,7 @@ interface SyncReadPluginSettings {
 	password: string;
 	token: string;
 	time: string;
+	apiKey: string;
 }
 
 const DEFAULT_SETTINGS: SyncReadPluginSettings = {
@@ -15,6 +16,7 @@ const DEFAULT_SETTINGS: SyncReadPluginSettings = {
 	password: '',
 	token: '',
 	time: '2020-01-01 00:00:00',
+	apiKey: ''
 }
 
 var isWriting = false;
@@ -133,6 +135,16 @@ class SyncReadSettingTab extends PluginSettingTab {
 					}
 					});
 			})
+
+		new Setting(containerEl)
+			.setName('api key(可选)')
+			.addText(text => text
+				.setPlaceholder('请输入api key')
+				.setValue(this.plugin.settings.apiKey)
+				.onChange(async (value) => {
+					this.plugin.settings.apiKey = value;
+					await this.plugin.saveSettings();
+				}));
 	}
 }
 
@@ -141,8 +153,10 @@ async function fetchArticle(settings: SyncReadPluginSettings,time: string,page: 
 
 	try {
 
-	
-	const res = await requestUrl(
+	const apiKey = settings.apiKey;
+	let res;
+	if(apiKey === ''){
+		res = await requestUrl(
 		{
 			url:`http://43.138.149.38:5050/get_synced_articles?time=${time}&page_number=${page}&page_size=50`, 
 			method: 'GET',
@@ -151,6 +165,17 @@ async function fetchArticle(settings: SyncReadPluginSettings,time: string,page: 
 			},
 		}
 		);
+	}else{
+		res = await requestUrl(
+			{
+				url:`http://43.138.149.38:5050/get_synced_articles_by_key?time=${time}&page_number=${page}&page_size=50`, 
+				method: 'GET',
+				headers: {
+					'api_key':  apiKey
+				},
+			}
+			);
+	}
 	// new Notice(`token: ${settings.token}`);
 	if (res.status !== 200) {
 		new Notice('同步失败');
@@ -192,14 +217,15 @@ async function writeAllArticles(vault: Vault,plugin: SyncReadPlugin){
 		try{
 			await Promise.all(articles.map((article: { title: string; content: string; }) => writeArticle(vault, article)));
 		}catch(error){
-			new Notice(error.message);
-			isWriting = false;
-			return;
+			// new Notice(error.message);
+			// isWriting = false;
+			// return;
 		}
 		// new Notice(`page: ${page}`);
 		plugin.settings.time = articles[articles.length-1].created_at;
 		plugin.saveSettings();
 		page++;
+		await new Promise((resolve) => setTimeout(resolve, 1000));
 		// new Notice(`page: ${page}`);
 	}while(true);
 
