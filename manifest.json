@@ -1,7 +1,7 @@
 {
 	"id": "syncread",
 	"name": "syncread-assistant",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"minAppVersion": "0.15.0",
 	"description": "sync articles from syncread app",
 	"author": "flyer1b",
