@@ -1,5 +1,5 @@
 import { time } from 'console';
-import { App, Notice, Plugin, PluginSettingTab, Setting,Vault,TFile, normalizePath, requestUrl } from 'obsidian';
+import { App, Notice, Plugin, PluginSettingTab, Setting,Vault,TFile, normalizePath, requestUrl, FileManager } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -34,7 +34,7 @@ export default class SyncReadPlugin extends Plugin {
 			// new Notice(`path: ${this.app.vault.getRoot().path}`);
 			// craeteFile(this.app.vault);
 			// new Notice(`token: ${this.settings.token}`);
-		 	writeAllArticles(this.app.vault,this);
+		 	writeAllArticles(this.app,this);
 		});
 		
 
@@ -192,14 +192,21 @@ async function fetchArticle(settings: SyncReadPluginSettings,time: string,page: 
 }
 }
 
-async function writeArticle(vault: Vault, article: { title: string, content: string }): Promise<TFile> {
+async function writeArticle(vault: Vault,fileManager:FileManager, article: { title: string, content: string ,site:string}): Promise<void> {
 	var folder = vault.getAbstractFileByPath('SyncRead同步文件夹');
 	if(!folder) folder = await vault.createFolder('SyncRead同步文件夹');
-	return vault.create(folder.path+'/'+filterIllegalChars(normalizePath(article.title)) + ".md", article.content);
+	new Notice('url: ' + article.site);
+	let file = await vault.create(folder.path+'/'+filterIllegalChars(normalizePath(article.title)) + ".md", article.content);
+	return fileManager.processFrontMatter(file,(frontMatter) => {
+		frontMatter['created_at'] = new Date().toISOString();
+		frontMatter['url'] = article.site;
+	});
 }
 
-async function writeAllArticles(vault: Vault,plugin: SyncReadPlugin){
+async function writeAllArticles(app: App,plugin: SyncReadPlugin){
 
+	let vault = app.vault;
+	let fileManager = app.fileManager;
 	new Notice(isWriting ? '正在同步' : '开始同步');
 	if(isWriting) return;
 		isWriting = true;
@@ -215,7 +222,7 @@ async function writeAllArticles(vault: Vault,plugin: SyncReadPlugin){
 			break;	
 		}
 		try{
-			await Promise.all(articles.map((article: { title: string; content: string; }) => writeArticle(vault, article)));
+			await Promise.all(articles.map((article: { title: string; content: string;site:string }) => writeArticle(vault, fileManager,article)));
 		}catch(error){
 			// new Notice(error.message);
 			// isWriting = false;
