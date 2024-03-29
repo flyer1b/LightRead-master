@@ -249,7 +249,7 @@ async function writeNote(vault: Vault,fileManager:FileManager, note: {id:string;
 	let noteText = note.text.replace(/\n+$/, "");  // Remove trailing newlines
 
 	let noteTextWithQuotes = "\n\n\n>" + noteText.replace(/\n/g, "\n>");
-	new Notice(noteTextWithQuotes);
+	// new Notice(noteTextWithQuotes);
 	return vault.append(noteFile as TFile,noteTextWithQuotes+"\n\n"+(note.annotation!==null?note.annotation:""));
 	
 }
