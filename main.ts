@@ -214,7 +214,14 @@ async function fetchNote(settings: SyncReadPluginSettings,time: string,page: num
 			}
 			const data = await res.json;
 			// new Notice(`res: ${data.data.length}`);
-			return data.data;
+			if(data.code===0){
+				return data.data;
+			}else{
+				new Notice(data.message);
+				isWriting = false;
+				return;
+			
+			}
 	}
 } catch (error) {
 	new Notice('同步失败: ' + error.message);
