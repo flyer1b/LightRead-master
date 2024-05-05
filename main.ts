@@ -1,3 +1,4 @@
+import { FolderSuggest } from 'file_suggest';
 import { App, Notice, Plugin, PluginSettingTab, Setting,Vault,TFile, normalizePath, requestUrl, FileManager } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
@@ -9,6 +10,8 @@ interface SyncReadPluginSettings {
 	time: string;
 	noteTime: string;
 	apiKey: string;
+	articleFolder: string;
+	noteFolder: string;
 }
 
 const DEFAULT_SETTINGS: SyncReadPluginSettings = {
@@ -17,7 +20,9 @@ const DEFAULT_SETTINGS: SyncReadPluginSettings = {
 	token: '',
 	time: '2020-01-01 00:00:00',
 	noteTime: '2024-03-09T10:37:49',
-	apiKey: ''
+	apiKey: '',
+	articleFolder: '',
+	noteFolder: ''
 }
 
 var isWriting = false;
@@ -147,7 +152,39 @@ class SyncReadSettingTab extends PluginSettingTab {
 					this.plugin.settings.apiKey = value;
 					await this.plugin.saveSettings();
 				}));
-	}
+		
+		new Setting(containerEl)
+		.setName('文章文件夹')
+		// .setDesc('同步文章保存的文件夹')
+		.addSearch(search => {
+			new FolderSuggest(this.app, search.inputEl)
+			search
+			.setPlaceholder('请输入文件夹路径')
+			.setValue(this.plugin.settings.articleFolder)
+			.onChange(async (value) => {
+				this.plugin.settings.articleFolder = value
+				// new Notice(`value: ${value}`);
+				await this.plugin.saveSettings()
+			})
+		}
+		);
+	
+		new Setting(containerEl)
+		.setName('标注文件夹')
+		// .setDesc('同步标注保存的文件夹')
+		.addSearch(search => {
+			new FolderSuggest(this.app, search.inputEl)
+			search
+			.setPlaceholder('请输入文件夹路径')
+			.setValue(this.plugin.settings.noteFolder)
+			.onChange(async (value) => {
+				this.plugin.settings.noteFolder = value
+				// new Notice(`value: ${value}`);
+				await this.plugin.saveSettings()
+			})
+		}
+		);
+		}
 }
 
 
@@ -230,25 +267,31 @@ async function fetchNote(settings: SyncReadPluginSettings,time: string,page: num
 }
 }
 
-async function writeArticle(vault: Vault,fileManager:FileManager, article: { title: string, content: string ,site:string}): Promise<void> {
-	var folder = vault.getAbstractFileByPath('SyncRead同步文件夹');
-	if(!folder) folder = await vault.createFolder('SyncRead同步文件夹');
+async function writeArticle(settings:SyncReadPluginSettings,vault: Vault,fileManager:FileManager, article: { title: string, content: string ,site:string}): Promise<void> {
+	var folder:String|undefined = settings.articleFolder;
+	if( folder === ''){
+		folder = vault.getAbstractFileByPath('SyncRead同步文件夹')?.path;
+		if(!folder) folder = (await vault.createFolder('SyncRead同步文件夹')).path;
+	}
 	// new Notice('url: ' + article.site);
-	let file = await vault.create(folder.path+'/'+filterIllegalChars(normalizePath(article.title)) + ".md", article.content);
+	let file = await vault.create(folder+'/'+filterIllegalChars(normalizePath(article.title)) + ".md", article.content);
 	return fileManager.processFrontMatter(file,(frontMatter) => {
 		frontMatter['created_at'] = new Date().toISOString();
 		frontMatter['url'] = article.site;
 	});
 }
 
-async function writeNote(vault: Vault,fileManager:FileManager, note: {id:string; text: string; annotation: string;articleTitle:string;update_at:string }): Promise<void> {
-	var folder = vault.getAbstractFileByPath('SyncRead同步文件夹');
-	if(!folder) folder = await vault.createFolder('SyncRead同步文件夹');
-	var noteFolder = vault.getAbstractFileByPath(folder.path+'/标注')
-	if(!noteFolder) noteFolder = await vault.createFolder(folder.path+'/标注');
-	let noteFile = vault.getAbstractFileByPath(noteFolder.path+'/[标注]'+filterIllegalChars(normalizePath(note.articleTitle)) + ".md");
+async function writeNote(settings:SyncReadPluginSettings,vault: Vault,fileManager:FileManager, note: {id:string; text: string; annotation: string;articleTitle:string;update_at:string }): Promise<void> {
+	var noteFolder:String|undefined = settings.noteFolder;
+
+	if( noteFolder === ''){
+		noteFolder = vault.getAbstractFileByPath('SyncRead同步文件夹/标注')?.path;
+		if(!noteFolder) noteFolder = (await vault.createFolder('SyncRead同步文件夹/标注')).path;
+	}
+	
+	let noteFile = vault.getAbstractFileByPath(noteFolder+'/[标注]'+filterIllegalChars(normalizePath(note.articleTitle)) + ".md");
 	if(!noteFile) {
-		noteFile = await vault.create(noteFolder.path+'/[标注]'+filterIllegalChars(normalizePath(note.articleTitle)) + ".md", "\n");
+		noteFile = await vault.create(noteFolder+'/[标注]'+filterIllegalChars(normalizePath(note.articleTitle)) + ".md", "\n");
 		fileManager.processFrontMatter(noteFile as TFile,(frontMatter) => {
 			frontMatter['originArticle'] = `[[${filterIllegalChars(normalizePath(note.articleTitle))}]]`;
 		});
@@ -310,7 +353,7 @@ async function writeAllArticles(app: App,plugin: SyncReadPlugin){
 			break;	
 		}
 		try{
-			await Promise.all(articles.map((article: { title: string; content: string;site:string }) => writeArticle(vault, fileManager,article)));
+			await Promise.all(articles.map((article: { title: string; content: string;site:string }) => writeArticle(plugin.settings,vault, fileManager,article)));
 		}catch(error){
 			// new Notice(error.message);
 			// isWriting = false;
