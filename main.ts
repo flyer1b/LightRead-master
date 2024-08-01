@@ -200,7 +200,7 @@ async function fetchArticle(settings: SyncReadPluginSettings,time: string,page: 
 	}else{
 		res = await requestUrl(
 			{
-				url:`http://43.138.149.38:5050/get_synced_articles_by_key?time=${time}&page_number=${page}&page_size=50`, 
+				url:`http://101.32.116.127:5050/get_synced_articles_by_key?time=${time}&page_number=${page}&page_size=50`, 
 				method: 'GET',
 				headers: {
 					'api_key':  apiKey
@@ -237,7 +237,7 @@ async function fetchNote(settings: SyncReadPluginSettings,time: string,page: num
 	}else{
 		res = await requestUrl(
 			{
-				url:`http://43.138.149.38:5050/get_notes_by_key?time=${time}&page_number=${page}&page_size=50`, 
+				url:`http://101.32.116.127:5050/get_notes_by_key?time=${time}&page_number=${page}&page_size=50`, 
 				method: 'GET',
 				headers: {
 					'api_key':  apiKey
